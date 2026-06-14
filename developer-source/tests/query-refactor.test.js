@@ -38,8 +38,13 @@ describe("modular inventory queries", () => {
     expect(createRecentQuery(0).Options.Top).toBe(1);
   });
 
-  it("projects lightweight environment and recent resource fields", () => {
-    expect(createEnvironmentQuery().Clauses.some(clause => clause.$type === "project")).toBe(true);
+  it("projects lightweight fields with stable aliases for real tenant responses", () => {
+    const environmentProject = createEnvironmentQuery().Clauses.find(clause => clause.$type === "project");
+    const recentProject = createRecentQuery(20).Clauses.find(clause => clause.$type === "project");
+    expect(environmentProject.FieldList).toContain("displayName = tostring(properties.displayName)");
+    expect(environmentProject.FieldList).toContain("isManagedEnvironment = tobool(properties.isManaged)");
+    expect(recentProject.FieldList).toContain("environmentId = tostring(properties.environmentId)");
+    expect(recentProject.FieldList).toContain("createdAt = tostring(properties.createdAt)");
     expect(createRecentQuery(20).Clauses.find(clause => clause.$type === "take").TakeCount).toBe(20);
   });
 
@@ -64,13 +69,14 @@ describe("modular inventory queries", () => {
   });
 
   it("creates independent resource type and detail queries", () => {
-    const list = createResourceTypeQuery("cloudFlows", "next");
+    const list = createResourceTypeQuery("cloudFlows", "next", { environmentId: "env-real" });
     expect(list.Options.SkipToken).toBe("next");
     expect(list.Clauses[0].Values).toContain("'microsoft.powerautomate/cloudflows'");
+    expect(list.Clauses.find(clause => clause.FieldName === "properties.environmentId").Values).toEqual(["'env-real'"]);
 
     const detail = createResourceDetailQuery("microsoft.powerautomate/cloudflows", "flow-id");
     expect(detail.Clauses.some(clause => clause.FieldName === "name")).toBe(true);
-    expect(detail.Clauses.find(clause => clause.$type === "project").FieldList).toContain("properties.powerPlatformConnectors");
+    expect(detail.Clauses.find(clause => clause.$type === "project").FieldList).toContain("powerPlatformConnectors = properties.powerPlatformConnectors");
   });
 
   it("keeps the official summary when the optional environment aggregation returns HTTP 400", async () => {
@@ -113,6 +119,6 @@ describe("summary normalisation and cache isolation", () => {
   });
 
   it("creates tenant and version scoped cache keys", () => {
-    expect(datasetCacheKey("TENANT-A", "resources:cloudFlows")).toBe("tenant-a:resources:cloudFlows:v2");
+    expect(datasetCacheKey("TENANT-A", "resources:cloudFlows")).toBe("tenant-a:resources:cloudFlows:v3");
   });
 });

@@ -46,6 +46,15 @@ export const RESOURCE_TYPES = Object.freeze({
 
 export const QUERY_RESOURCE_TYPES = Object.keys(RESOURCE_TYPES);
 
+export const CONNECTOR_INVENTORY_TYPES = Object.freeze(new Set([
+  "microsoft.powerapps/canvasapps",
+  "microsoft.powerapps/modeldrivenapps",
+  "microsoft.powerautomate/cloudflows",
+  "microsoft.powerautomate/agentflows",
+  "microsoft.powerautomate/m365agentflows",
+  "microsoft.copilotstudio/agents"
+]));
+
 export const INVENTORY_QUERY = Object.freeze({
   pageSize: 1000,
   requestTimeoutMs: 45000,
@@ -67,13 +76,15 @@ export const BOOKS = {
       title: "Definiendo la estructura marco para el Centro de Excelencia de Power Platform",
       author: "Nicolás Andrés Fernández",
       url: "https://www.amazon.com/-/es/Definiendo-estructura-Centro-Excelencia-Platform/dp/B0FSDWQMHW/ref=tmm_pap_swatch_0",
-      cover: "./assets/book-covers/coe-power-platform-es.jpg"
+      cover: "./assets/book-covers/coe-power-platform-es.jpg",
+      coverAspect: 406 / 500
     },
     {
       title: "Copilot Studio y el futuro del Centro de Excelencia de Power Platform",
       author: "Nicolás Andrés Fernández",
       url: "https://www.amazon.com/-/es/Nicol%C3%A1s-Andr%C3%A9s-Fern%C3%A1ndez/dp/B0GZGL3T1K/ref=tmm_pap_swatch_0",
-      cover: "./assets/book-covers/copilot-studio-coe-es.jpg"
+      cover: "./assets/book-covers/copilot-studio-coe-es-original-a4.jpg",
+      coverAspect: 1414 / 2000
     }
   ],
   en: [
@@ -81,13 +92,15 @@ export const BOOKS = {
       title: "Defining the Framework Structure for the Power Platform Center of Excellence",
       author: "Nicolás Andrés Fernández",
       url: "https://www.amazon.com/-/es/Defining-Framework-Structure-Platform-Excellence/dp/B0GDDRCD2C/ref=tmm_pap_swatch_0",
-      cover: "./assets/book-covers/coe-power-platform-en.jpg"
+      cover: "./assets/book-covers/coe-power-platform-en.jpg",
+      coverAspect: 128 / 158
     },
     {
       title: "Copilot Studio and the Future of the Power Platform Center of Excellence",
       author: "Nicolás Andrés Fernández",
       url: "https://www.amazon.com/-/es/Nicol%C3%A1s-Andr%C3%A9s-Fern%C3%A1ndez/dp/B0H2VTJZGR/ref=tmm_pap_swatch_0",
-      cover: "./assets/book-covers/copilot-studio-coe-en.jpg"
+      cover: "./assets/book-covers/copilot-studio-coe-en-original-a4.jpg",
+      coverAspect: 1414 / 2000
     }
   ]
 };

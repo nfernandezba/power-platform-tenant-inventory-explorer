@@ -5,61 +5,108 @@ export function getResourceTypeKey(type) {
   return RESOURCE_TYPES[String(type ?? "").toLowerCase()]?.key ?? "resourceTypeUnknown";
 }
 
+function firstPresent(...values) {
+  return values.find(value => value !== undefined && value !== null && value !== "");
+}
+
+function hasField(item, properties, name) {
+  return Object.prototype.hasOwnProperty.call(item ?? {}, name)
+    || Object.prototype.hasOwnProperty.call(item ?? {}, `properties.${name}`)
+    || Object.prototype.hasOwnProperty.call(item ?? {}, `properties_${name}`)
+    || Object.prototype.hasOwnProperty.call(properties ?? {}, name);
+}
+
+function projectedField(item, properties, name, ...aliases) {
+  const keys = [name, ...aliases];
+  for (const key of keys) {
+    const value = firstPresent(
+      item?.[key],
+      item?.[`properties.${key}`],
+      item?.[`properties_${key}`],
+      properties?.[key]
+    );
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
+export function canonicalEnvironmentId(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  const segments = text.split("/").filter(Boolean);
+  return segments.length ? segments.at(-1) : text;
+}
+
 export function normaliseInventory(rawItems, environmentItems = []) {
   const items = rawItems.map((item, index) => {
     const properties = parseProperties(item?.properties);
-    const connectors = asArray(properties.powerPlatformConnectors).map(connector => ({
-      connectorId: connector?.connectorId ?? "",
+    const rawConnectors = projectedField(item, properties, "powerPlatformConnectors");
+    const connectors = asArray(rawConnectors).map(connector => ({
+      connectorId: connector?.connectorId ?? connector?.id ?? "",
       operations: asArray(connector?.operations)
-        .map(operation => operation?.operationId ?? "")
+        .map(operation => operation?.operationId ?? operation?.id ?? "")
         .filter(Boolean)
     }));
-    const environmentId = properties.environmentId ?? "";
-    const type = String(item?.type ?? "").toLowerCase();
+    const rawEnvironmentId = projectedField(item, properties, "environmentId") ?? "";
+    const environmentId = canonicalEnvironmentId(rawEnvironmentId);
+    const type = String(item?.type ?? projectedField(item, properties, "type") ?? "").toLowerCase();
+    const id = String(item?.name ?? projectedField(item, properties, "id") ?? "");
+    const displayName = projectedField(item, properties, "displayName", "environmentName") ?? id;
+    const isManaged = projectedField(item, properties, "isManagedEnvironment", "isManaged");
+    const isQuarantined = projectedField(item, properties, "isQuarantined");
 
     return {
-      rowId: `${String(item?.type ?? "unknown").toLowerCase()}:${item?.name ?? "row"}:${index}`,
-      id: item?.name ?? "",
-      tenantId: item?.tenantId ?? "",
-      displayName: properties.displayName ?? item?.environmentName ?? item?.name ?? "",
+      rowId: `${type || "unknown"}:${id || "row"}:${index}`,
+      id,
+      tenantId: item?.tenantId ?? projectedField(item, properties, "tenantId") ?? "",
+      displayName: String(displayName ?? ""),
       type,
       typeKey: getResourceTypeKey(type),
       category: RESOURCE_TYPES[type]?.category ?? "other",
       accent: RESOURCE_TYPES[type]?.accent ?? "indigo",
-      location: item?.environmentRegion ?? item?.location ?? "",
-      resourceLocation: item?.location ?? "",
+      location: String(firstPresent(item?.environmentRegion, item?.location, projectedField(item, properties, "environmentRegion"), projectedField(item, properties, "location")) ?? ""),
+      resourceLocation: String(item?.location ?? projectedField(item, properties, "location") ?? ""),
       environmentId,
-      environmentName: item?.environmentName ?? "",
-      environmentType: item?.environmentType ?? properties.environmentType ?? "",
-      isManagedEnvironment: item?.isManagedEnvironment ?? properties.isManaged ?? null,
-      environmentGroup: properties.environmentGroup ?? "",
-      environmentGroupId: properties.environmentGroupId ?? "",
-      createdAt: properties.createdAt ?? null,
-      createdBy: properties.createdBy ?? "",
-      ownerId: properties.ownerId ?? "",
-      lastModifiedAt: properties.lastModifiedAt ?? null,
-      lastModifiedBy: properties.lastModifiedBy ?? "",
-      isQuarantined: properties.isQuarantined === true,
-      subtype: properties.subType ?? properties.subtype ?? "",
-      trigger: properties.trigger ?? "",
-      triggerOperation: properties.triggerOperation ?? "",
-      createdIn: properties.createdIn ?? "",
+      environmentIdRaw: String(rawEnvironmentId ?? ""),
+      environmentName: String(projectedField(item, properties, "environmentName") ?? ""),
+      environmentType: String(projectedField(item, properties, "environmentType") ?? ""),
+      isManagedEnvironment: typeof isManaged === "boolean" ? isManaged : isManaged === "true" ? true : isManaged === "false" ? false : null,
+      environmentGroup: String(projectedField(item, properties, "environmentGroup") ?? ""),
+      environmentGroupId: String(projectedField(item, properties, "environmentGroupId") ?? ""),
+      createdAt: projectedField(item, properties, "createdAt") ?? null,
+      createdBy: String(projectedField(item, properties, "createdBy") ?? ""),
+      ownerId: String(projectedField(item, properties, "ownerId") ?? ""),
+      lastModifiedAt: projectedField(item, properties, "lastModifiedAt") ?? null,
+      lastModifiedBy: String(projectedField(item, properties, "lastModifiedBy") ?? ""),
+      isQuarantined: isQuarantined === true || isQuarantined === "true",
+      subtype: String(projectedField(item, properties, "subType", "subtype") ?? ""),
+      trigger: String(projectedField(item, properties, "trigger") ?? ""),
+      triggerOperation: String(projectedField(item, properties, "triggerOperation") ?? ""),
+      createdIn: String(projectedField(item, properties, "createdIn") ?? ""),
       connectors,
       connectorIds: connectors.map(connector => connector.connectorId).filter(Boolean),
+      connectorDataLoaded: hasField(item, properties, "powerPlatformConnectors"),
+      appModuleId: String(projectedField(item, properties, "appModuleId") ?? ""),
+      logicalName: String(projectedField(item, properties, "logicalName") ?? ""),
+      workflowEntityId: String(projectedField(item, properties, "workflowEntityId") ?? ""),
+      description: String(projectedField(item, properties, "description") ?? ""),
       raw: item
     };
   });
 
   const environmentMap = new Map();
   for (const item of [...items, ...environmentItems]) {
-    if (item.type === "microsoft.powerplatform/environments") {
-      environmentMap.set(normaliseText(item.id), item.displayName || item.id);
-    }
+    if (item.type !== "microsoft.powerplatform/environments") continue;
+    const label = item.displayName || item.id;
+    const keys = [item.id, item.environmentId, item.environmentIdRaw]
+      .map(canonicalEnvironmentId)
+      .filter(Boolean);
+    keys.forEach(key => environmentMap.set(normaliseText(key), label));
   }
 
   for (const item of items) {
     if (!item.environmentName && item.environmentId) {
-      item.environmentName = environmentMap.get(normaliseText(item.environmentId)) ?? "";
+      item.environmentName = environmentMap.get(normaliseText(canonicalEnvironmentId(item.environmentId))) ?? "";
     }
     if (item.type === "microsoft.powerplatform/environments" && !item.environmentName) {
       item.environmentName = item.displayName;
@@ -356,7 +403,7 @@ export function normaliseSummaryRows(rows, environmentRows = []) {
 
   for (const row of environmentRows ?? []) {
     const count = Number(row?.resourceCount ?? row?.count_ ?? row?.count ?? 0) || 0;
-    const environmentId = String(row?.environmentId ?? "");
+    const environmentId = canonicalEnvironmentId(row?.environmentId);
     if (environmentId) byEnvironment[normaliseText(environmentId)] = (byEnvironment[normaliseText(environmentId)] ?? 0) + count;
   }
 

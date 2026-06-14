@@ -30,6 +30,47 @@ describe("normaliseInventory", () => {
     expect(app.environmentName).toBe("Development");
     expect(app.connectorIds).toEqual(["shared_sharepointonline"]);
   });
+
+  it("normalises projected top-level aliases returned by Azure Resource Graph", () => {
+    const environments = normaliseInventory([{
+      name: "env-real",
+      type: "microsoft.powerplatform/environments",
+      location: "europe",
+      displayName: "Real Production",
+      environmentType: "Production",
+      isManagedEnvironment: true,
+      lastModifiedAt: "2026-06-01T10:00:00Z"
+    }]);
+    const resources = normaliseInventory([{
+      name: "flow-real",
+      type: "microsoft.powerautomate/cloudflows",
+      location: "europe",
+      displayName: "Approval Flow",
+      environmentId: "/providers/Microsoft.PowerPlatform/environments/env-real",
+      ownerId: "owner-real",
+      createdAt: "2026-01-02T00:00:00Z",
+      lastModifiedAt: "2026-06-03T00:00:00Z"
+    }], environments);
+    expect(environments[0].displayName).toBe("Real Production");
+    expect(resources[0].displayName).toBe("Approval Flow");
+    expect(resources[0].environmentName).toBe("Real Production");
+    expect(resources[0].environmentId).toBe("env-real");
+    expect(resources[0].createdAt).toBe("2026-01-02T00:00:00Z");
+    expect(resources[0].lastModifiedAt).toBe("2026-06-03T00:00:00Z");
+    expect(resources[0].connectorDataLoaded).toBe(false);
+  });
+
+  it("marks connector detail as loaded when the projected connector field is returned", () => {
+    const [resource] = normaliseInventory([{
+      name: "flow-detail",
+      type: "microsoft.powerautomate/cloudflows",
+      displayName: "Detailed Flow",
+      powerPlatformConnectors: [{ connectorId: "shared_teams", operations: [{ operationId: "PostMessage" }] }]
+    }]);
+    expect(resource.connectorDataLoaded).toBe(true);
+    expect(resource.connectorIds).toEqual(["shared_teams"]);
+    expect(resource.connectors[0].operations).toEqual(["PostMessage"]);
+  });
 });
 
 describe("filterInventory", () => {

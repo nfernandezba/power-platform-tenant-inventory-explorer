@@ -2,6 +2,7 @@ import {
   APP_NAME,
   APP_VERSION,
   BOOKS,
+  CONNECTOR_INVENTORY_TYPES,
   LINKEDIN_URL,
   POWER_PLATFORM_SCOPES,
   RESOURCE_TYPES,
@@ -361,7 +362,7 @@ function renderExportToolbar() {
 function renderEnvironmentsTab() {
   const environments = buildEnvironmentRowsFromSummary(environmentItems(), summaryData());
   const source = state.bootstrap.environments;
-  return `<section class="section-block"><div class="section-heading-row"><div><p class="eyebrow">ENVIRONMENT LEVEL</p><h1>${escapeHtml(t().environmentInventory)}</h1><p>${escapeHtml(t().environmentInventoryOptimisedBody)}</p></div><button id="refresh-environments" class="btn btn-primary" type="button">${escapeHtml(t().refreshEnvironments)}</button></div>${source.error ? renderInlineError(source.error) : ""}<div class="table-wrap environment-table"><table><thead><tr><th>${escapeHtml(t().environment)}</th><th>${escapeHtml(t().type)}</th><th>${escapeHtml(t().managed)}</th><th>${escapeHtml(t().region)}</th><th>${escapeHtml(t().resourceCount)}</th><th></th></tr></thead><tbody>${environments.map(environment => `<tr><td class="name-cell"><strong>${escapeHtml(environment.displayName || environment.id)}</strong><small>${escapeHtml(environment.id)}</small></td><td>${escapeHtml(environment.environmentType || "—")}</td><td><span class="status-pill ${environment.isManagedEnvironment ? "status-green" : "status-amber"}">${escapeHtml(environment.isManagedEnvironment ? t().managed : t().notManaged)}</span></td><td>${escapeHtml(environment.location || "—")}</td><td class="number-cell">${environment.resourceCount.toLocaleString(t().locale)}</td><td><div class="row-actions"><button type="button" class="btn btn-small btn-ghost" data-env-resource="${escapeHtml(environment.id)}">${escapeHtml(t().loadEnvironmentResources)}</button><button type="button" class="btn btn-small btn-ghost" data-env-settings="${escapeHtml(environment.id)}">${escapeHtml(t().openSettings)}</button></div></td></tr>`).join("") || `<tr><td colspan="6" class="empty-table">${escapeHtml(t().noData)}</td></tr>`}</tbody></table></div></section>`;
+  return `<section class="section-block"><div class="section-heading-row"><div><p class="eyebrow">ENVIRONMENT LEVEL</p><h1>${escapeHtml(t().environmentInventory)}</h1><p>${escapeHtml(t().environmentInventoryOptimisedBody)}</p></div><button id="refresh-environments" class="btn btn-primary" type="button">${escapeHtml(t().refreshEnvironments)}</button></div>${source.error ? renderInlineError(source.error) : ""}<div class="table-wrap environment-table"><table><thead><tr><th>${escapeHtml(t().environment)}</th><th>${escapeHtml(t().type)}</th><th>${escapeHtml(t().managed)}</th><th>${escapeHtml(t().region)}</th><th>${escapeHtml(t().resourceCount)}</th><th></th></tr></thead><tbody>${environments.map(environment => `<tr><td class="name-cell"><strong title="${escapeHtml(environment.id)}">${escapeHtml(environment.displayName || t().unknownEnvironment)}</strong></td><td>${escapeHtml(environment.environmentType || "—")}</td><td><span class="status-pill ${environment.isManagedEnvironment ? "status-green" : "status-amber"}">${escapeHtml(environment.isManagedEnvironment ? t().managed : t().notManaged)}</span></td><td>${escapeHtml(environment.location || "—")}</td><td class="number-cell">${environment.resourceCount.toLocaleString(t().locale)}</td><td><div class="row-actions"><button type="button" class="btn btn-small btn-ghost" data-env-resource="${escapeHtml(environment.id)}">${escapeHtml(t().loadEnvironmentResources)}</button><button type="button" class="btn btn-small btn-ghost" data-env-settings="${escapeHtml(environment.id)}">${escapeHtml(t().openSettings)}</button></div></td></tr>`).join("") || `<tr><td colspan="6" class="empty-table">${escapeHtml(t().noData)}</td></tr>`}</tbody></table></div></section>`;
 }
 
 function renderResourcesTab() {
@@ -384,15 +385,31 @@ function getProcessedItems() {
   return sortInventory(filterInventory(loadedResources(), effective), state.sort);
 }
 function sortIndicator(key) { return state.sort.key !== key ? "↕" : state.sort.direction === "asc" ? "↑" : "↓"; }
+function hydratedResource(item) {
+  const detail = state.detailCache[`${item.type}:${item.id}`];
+  return detail ? { ...item, ...detail, rowId: item.rowId } : item;
+}
+function renderConnectorAction(item) {
+  if (!CONNECTOR_INVENTORY_TYPES.has(item.type)) {
+    return `<span class="connector-unavailable" title="${escapeHtml(t().connectorNotSupportedHelp)}">${escapeHtml(t().notAvailable)}</span>`;
+  }
+  if (item.connectorDataLoaded) {
+    const label = item.connectorIds.length
+      ? t().viewConnectors.replace("{count}", item.connectorIds.length.toLocaleString(t().locale))
+      : t().noConnectors;
+    return `<button class="connector-action connector-loaded" data-connectors="${escapeHtml(item.rowId)}" type="button" title="${escapeHtml(t().connectorLoadedHelp)}">${escapeHtml(label)}</button>`;
+  }
+  return `<button class="connector-action" data-connectors="${escapeHtml(item.rowId)}" type="button" title="${escapeHtml(t().connectorOnDemandHelp)}">${escapeHtml(t().loadConnectors)}</button>`;
+}
 function renderInventoryResults() {
   const processed = getProcessedItems();
   const totalPages = Math.max(1, Math.ceil(processed.length / state.pageSize));
   if (state.page > totalPages) state.page = totalPages;
   const start = (state.page - 1) * state.pageSize;
-  const pageItems = processed.slice(start, start + state.pageSize);
-  const rows = pageItems.map(item => `<tr><td class="name-cell"><button class="resource-link" data-detail="${escapeHtml(item.rowId)}" type="button">${escapeHtml(item.displayName || item.id || t().unknown)}</button><small>${escapeHtml(truncateMiddle(item.id, 9, 7))}</small></td><td><span class="type-pill accent-border-${escapeHtml(item.accent)}">${escapeHtml(t()[item.typeKey] ?? t().resourceTypeUnknown)}</span></td><td><span>${escapeHtml(item.environmentName || "—")}</span><small>${escapeHtml(item.environmentType || truncateMiddle(item.environmentId) || "")}</small></td><td>${escapeHtml(item.location || "—")}</td><td><code title="${escapeHtml(item.ownerId)}">${escapeHtml(item.ownerId ? truncateMiddle(item.ownerId) : "—")}</code></td><td>${escapeHtml(formatDate(item.createdAt, t().locale))}</td><td>${escapeHtml(formatDate(item.lastModifiedAt, t().locale))}</td><td><span class="on-demand-pill">${escapeHtml(item.connectorIds.length ? `${item.connectorIds.length}` : t().onDemand)}</span></td><td>${item.isQuarantined ? `<span class="status-pill status-red">${escapeHtml(t().quarantinedLabel)}</span>` : `<span class="status-pill status-green">${escapeHtml(t().active)}</span>`}</td></tr>`).join("");
+  const pageItems = processed.slice(start, start + state.pageSize).map(hydratedResource);
+  const rows = pageItems.map(item => `<tr><td class="name-cell"><button class="resource-link" data-detail="${escapeHtml(item.rowId)}" type="button" title="${escapeHtml(item.id)}">${escapeHtml(item.displayName || item.id || t().unknown)}</button></td><td><span class="type-pill accent-border-${escapeHtml(item.accent)}">${escapeHtml(t()[item.typeKey] ?? t().resourceTypeUnknown)}</span></td><td><span title="${escapeHtml(item.environmentId)}">${escapeHtml(item.environmentName || t().unknownEnvironment)}</span>${item.environmentType ? `<small>${escapeHtml(item.environmentType)}</small>` : ""}</td><td>${escapeHtml(item.location || "—")}</td><td><code title="${escapeHtml(item.ownerId)}">${escapeHtml(item.ownerId ? truncateMiddle(item.ownerId) : "—")}</code></td><td>${escapeHtml(formatDate(item.createdAt, t().locale))}</td><td>${escapeHtml(formatDate(item.lastModifiedAt, t().locale))}</td><td>${renderConnectorAction(item)}</td><td>${item.isQuarantined ? `<span class="status-pill status-red">${escapeHtml(t().quarantinedLabel)}</span>` : `<span class="status-pill status-green">${escapeHtml(t().active)}</span>`}</td></tr>`).join("");
   const headers = [["displayName", t().name], ["typeKey", t().type], ["environmentName", t().environment], ["location", t().region], ["ownerId", t().owner], ["createdAt", t().created], ["lastModifiedAt", t().modified]];
-  return `<div class="table-summary"><span>${escapeHtml(t().showing)} <strong>${processed.length ? start + 1 : 0}–${Math.min(start + state.pageSize, processed.length)}</strong> ${escapeHtml(t().of)} <strong>${processed.length.toLocaleString(t().locale)}</strong> ${escapeHtml(t().records)}</span><label>${escapeHtml(t().rowsPerPage)}<select id="page-size"><option value="25" ${state.pageSize === 25 ? "selected" : ""}>25</option><option value="50" ${state.pageSize === 50 ? "selected" : ""}>50</option><option value="100" ${state.pageSize === 100 ? "selected" : ""}>100</option><option value="250" ${state.pageSize === 250 ? "selected" : ""}>250</option></select></label></div><div class="table-wrap"><table><thead><tr>${headers.map(([key, label]) => `<th><button class="sort-button" data-sort="${key}" type="button">${escapeHtml(label)} <span>${sortIndicator(key)}</span></button></th>`).join("")}<th>${escapeHtml(t().connectors)} <span class="preview-badge">${escapeHtml(t().onDemand)}</span></th><th>${escapeHtml(t().status)}</th></tr></thead><tbody>${rows || `<tr><td class="empty-table" colspan="9">${escapeHtml(t().noData)}</td></tr>`}</tbody></table></div><div class="pagination"><button id="page-prev" class="btn btn-small btn-ghost" type="button" ${state.page <= 1 ? "disabled" : ""}>${escapeHtml(t().previous)}</button><span>${state.page} / ${totalPages}</span><button id="page-next" class="btn btn-small btn-ghost" type="button" ${state.page >= totalPages ? "disabled" : ""}>${escapeHtml(t().next)}</button></div>`;
+  return `<div class="table-summary"><span>${escapeHtml(t().showing)} <strong>${processed.length ? start + 1 : 0}–${Math.min(start + state.pageSize, processed.length)}</strong> ${escapeHtml(t().of)} <strong>${processed.length.toLocaleString(t().locale)}</strong> ${escapeHtml(t().records)}</span><label>${escapeHtml(t().rowsPerPage)}<select id="page-size"><option value="25" ${state.pageSize === 25 ? "selected" : ""}>25</option><option value="50" ${state.pageSize === 50 ? "selected" : ""}>50</option><option value="100" ${state.pageSize === 100 ? "selected" : ""}>100</option><option value="250" ${state.pageSize === 250 ? "selected" : ""}>250</option></select></label></div><div class="table-wrap"><table><thead><tr>${headers.map(([key, label]) => `<th><button class="sort-button" data-sort="${key}" type="button">${escapeHtml(label)} <span>${sortIndicator(key)}</span></button></th>`).join("")}<th>${escapeHtml(t().connectors)} <span class="connector-help" title="${escapeHtml(t().connectorOnDemandHelp)}" aria-label="${escapeHtml(t().connectorOnDemandHelp)}">?</span></th><th>${escapeHtml(t().status)}</th></tr></thead><tbody>${rows || `<tr><td class="empty-table" colspan="9">${escapeHtml(t().noData)}</td></tr>`}</tbody></table></div><div class="pagination"><button id="page-prev" class="btn btn-small btn-ghost" type="button" ${state.page <= 1 ? "disabled" : ""}>${escapeHtml(t().previous)}</button><span>${state.page} / ${totalPages}</span><button id="page-next" class="btn btn-small btn-ghost" type="button" ${state.page >= totalPages ? "disabled" : ""}>${escapeHtml(t().next)}</button></div>`;
 }
 
 function renderOptionalHeader(title, body, sourceState, buttonId, buttonLabel, badges = []) {
@@ -447,7 +464,7 @@ function formatValue(value) {
 }
 function renderLimitations() { return `<details class="limitations"><summary>${escapeHtml(t().dataLimitations)}</summary><ul>${t().limitations.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul></details>`; }
 function renderBooks() {
-  return `<section class="books-cta"><div class="books-cta-header"><h2>${escapeHtml(t().booksTitle)}</h2><p>${escapeHtml(t().booksCopy)}</p></div><div class="books-grid">${BOOKS[state.language].map(book => `<article class="book-card"><div class="book-cover-wrap"><img class="book-cover" src="${escapeHtml(book.cover)}" alt="${escapeHtml(book.title)}" loading="lazy" /><div class="book-cover-fallback">${escapeHtml(book.title)}</div></div><div><h3>${escapeHtml(book.title)}</h3><p>${escapeHtml(book.author)}</p><a href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t().viewAmazon)} ↗</a></div></article>`).join("")}</div></section>`;
+  return `<section class="books-cta"><div class="books-cta-header"><h2>${escapeHtml(t().booksTitle)}</h2><p>${escapeHtml(t().booksCopy)}</p></div><div class="books-grid">${BOOKS[state.language].map(book => `<article class="book-card"><div class="book-cover-wrap" style="--book-ratio:${Number(book.coverAspect || 0.8)}"><img class="book-cover" src="${escapeHtml(book.cover)}" alt="${escapeHtml(book.title)}" loading="lazy" /><div class="book-cover-fallback">${escapeHtml(book.title)}</div></div><div><h3>${escapeHtml(book.title)}</h3><p>${escapeHtml(book.author)}</p><a href="${escapeHtml(book.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t().viewAmazon)} ↗</a></div></article>`).join("")}</div></section>`;
 }
 
 function bindGlobalEvents() {
@@ -477,6 +494,7 @@ function bindWorkspaceEvents() {
     renderApp();
   }));
   document.querySelectorAll("[data-detail]").forEach(button => button.addEventListener("click", () => showResourceDetails(button.dataset.detail)));
+  document.querySelectorAll("[data-connectors]").forEach(button => button.addEventListener("click", () => showResourceDetails(button.dataset.connectors)));
   document.querySelectorAll("[data-env-settings]").forEach(button => button.addEventListener("click", () => {
     state.environmentSettings.selectedId = button.dataset.envSettings;
     state.activeTab = "env-settings";
@@ -539,6 +557,7 @@ function renderResultsOnly() {
   container.innerHTML = renderInventoryResults();
   bindResultsEvents();
   document.querySelectorAll("[data-detail]").forEach(button => button.addEventListener("click", () => showResourceDetails(button.dataset.detail)));
+  document.querySelectorAll("[data-connectors]").forEach(button => button.addEventListener("click", () => showResourceDetails(button.dataset.connectors)));
 }
 
 async function handleConnect(event) {
@@ -910,9 +929,60 @@ function normaliseError(error) {
   return { message, code: /AADSTS50011|redirect_uri/i.test(message) ? "redirect" : /user_cancelled|popup_window_error|consent/i.test(message) ? "consent" : "unknown", details: error?.errorMessage ?? "" };
 }
 
+function getPendingReportData() {
+  const core = [];
+  const coreDefinitions = [
+    ["summary", t().summary],
+    ["environments", t().environmentsTab],
+    ["recent", t().recent]
+  ];
+  for (const [key, label] of coreDefinitions) {
+    const source = state.bootstrap[key];
+    if (source.status !== "loaded") core.push(`${label}: ${queryStatusLabel(source)}`);
+  }
+
+  const resources = RESOURCE_TAB_KEYS
+    .filter(key => expectedCount(key) > 0 && !state.resources[key].complete)
+    .map(key => {
+      const loaded = state.resources[key].items.length;
+      const expected = expectedCount(key);
+      return `${t()[key]}: ${loaded.toLocaleString(t().locale)} / ${expected.toLocaleString(t().locale)}`;
+    });
+
+  const optional = [];
+  if (!state.tenantGovernance.data) optional.push(`${t().tenantGovernance}: ${queryStatusLabel(state.tenantGovernance)}`);
+  if (!state.dlp.policies.length && state.dlp.status !== "loaded") optional.push(`${t().dlpPolicies}: ${queryStatusLabel(state.dlp)}`);
+  if (!state.environmentSettings.details && !state.environmentSettings.settings) {
+    optional.push(`${t().environmentSettings}: ${queryStatusLabel(state.environmentSettings)}`);
+  } else if (state.environmentSettings.status !== "loaded") {
+    optional.push(`${t().environmentSettings}: ${queryStatusLabel(state.environmentSettings)}`);
+  }
+  return { core, resources, optional, hasPending: Boolean(core.length || resources.length || optional.length) };
+}
+
+function confirmIncompletePdfExport(pending) {
+  if (!pending.hasPending) return Promise.resolve(true);
+  const section = (title, items) => items.length
+    ? `<section class="export-warning-section"><h3>${escapeHtml(title)}</h3><ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul></section>`
+    : "";
+  return new Promise(resolve => {
+    const modalRoot = document.getElementById("modal-root");
+    modalRoot.innerHTML = `<div class="modal-backdrop" id="export-confirm-modal"><div class="modal-card export-confirm-card" role="dialog" aria-modal="true" aria-labelledby="export-confirm-title"><button id="export-confirm-close" class="modal-close" type="button" aria-label="${escapeHtml(t().close)}">×</button><p class="eyebrow">PDF REPORT</p><h2 id="export-confirm-title">${escapeHtml(t().reportPendingTitle)}</h2><p class="export-warning-copy">${escapeHtml(t().reportPendingBody)}</p>${section(t().reportPendingRequired, pending.core)}${section(t().reportPendingResources, pending.resources)}${section(t().reportPendingOptional, pending.optional)}<div class="modal-actions"><button id="export-confirm-cancel" class="btn btn-ghost" type="button">${escapeHtml(t().cancelExport)}</button><button id="export-confirm-continue" class="btn btn-primary" type="button">${escapeHtml(t().continueExport)}</button></div></div></div>`;
+    const finish = result => { modalRoot.innerHTML = ""; resolve(result); };
+    document.getElementById("export-confirm-cancel")?.addEventListener("click", () => finish(false));
+    document.getElementById("export-confirm-close")?.addEventListener("click", () => finish(false));
+    document.getElementById("export-confirm-continue")?.addEventListener("click", () => finish(true));
+    document.getElementById("export-confirm-modal")?.addEventListener("click", event => {
+      if (event.target.id === "export-confirm-modal") finish(false);
+    });
+  });
+}
+
 async function handlePdfExport() {
   const button = document.getElementById("export-pdf");
   if (!button || button.disabled) return;
+  const pending = getPendingReportData();
+  if (!(await confirmIncompletePdfExport(pending))) return;
   const label = button.querySelector("span:last-child");
   const originalLabel = label?.textContent ?? t().exportPdf;
   button.disabled = true; if (label) label.textContent = t().generatingPdf;
@@ -951,19 +1021,23 @@ async function showResourceDetails(rowId) {
     const token = await acquireInventoryToken();
     if (!token) return;
     const raw = await queryResourceDetail(token, base.type, base.id);
-    const detail = raw ? normaliseInventory([raw], environmentItems())[0] : base;
+    const normalisedDetail = raw ? normaliseInventory([raw], environmentItems())[0] : base;
+    const detail = { ...base, ...normalisedDetail, rowId: base.rowId, connectorDataLoaded: true };
     state.detailCache[cacheKey] = detail;
     renderDetailModal(detail, { loading: false });
+    renderResultsOnly();
   } catch (error) {
     renderDetailModal(base, { loading: false, error: normaliseError(error) });
   }
 }
 function renderDetailModal(item, { loading = false, error = null } = {}) {
-  const connectorDetails = loading
-    ? `<li>${escapeHtml(t().loadingDetail)}</li>`
-    : item.connectors.length
-      ? item.connectors.map(connector => `<li><strong>${escapeHtml(connector.connectorId)}</strong>${connector.operations.length ? `<span>${escapeHtml(connector.operations.join(", "))}</span>` : ""}</li>`).join("")
-      : `<li>${escapeHtml(t().noConnectorData)}</li>`;
+  const connectorDetails = !CONNECTOR_INVENTORY_TYPES.has(item.type)
+    ? `<li>${escapeHtml(t().connectorNotSupportedHelp)}</li>`
+    : loading
+      ? `<li>${escapeHtml(t().loadingDetail)}</li>`
+      : item.connectors.length
+        ? item.connectors.map(connector => `<li><strong>${escapeHtml(connector.connectorId)}</strong>${connector.operations.length ? `<span>${escapeHtml(connector.operations.join(", "))}</span>` : ""}</li>`).join("")
+        : `<li>${escapeHtml(t().noConnectorData)}</li>`;
   document.getElementById("modal-root").innerHTML = `<div class="modal-backdrop" id="detail-modal"><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="detail-title"><button id="close-modal" class="modal-close" type="button" aria-label="${escapeHtml(t().close)}">×</button><p class="eyebrow">${escapeHtml(t()[item.typeKey] ?? t().resourceTypeUnknown)}</p><h2 id="detail-title">${escapeHtml(item.displayName || item.id)}</h2>${error ? renderInlineError(error) : ""}<div class="detail-grid"><div><span>${escapeHtml(t().resourceId)}</span><code>${escapeHtml(item.id || "—")}</code></div><div><span>${escapeHtml(t().environment)}</span><strong>${escapeHtml(item.environmentName || "—")}</strong></div><div><span>${escapeHtml(t().environmentId)}</span><code>${escapeHtml(item.environmentId || "—")}</code></div><div><span>${escapeHtml(t().region)}</span><strong>${escapeHtml(item.location || "—")}</strong></div><div><span>${escapeHtml(t().owner)}</span><code>${escapeHtml(item.ownerId || "—")}</code></div><div><span>${escapeHtml(t().createdBy)}</span><code>${escapeHtml(item.createdBy || "—")}</code></div><div><span>${escapeHtml(t().created)}</span><strong>${escapeHtml(formatDate(item.createdAt, t().locale, true))}</strong></div><div><span>${escapeHtml(t().modified)}</span><strong>${escapeHtml(formatDate(item.lastModifiedAt, t().locale, true))}</strong></div></div><h3>${escapeHtml(t().connectors)} <span class="preview-badge">${escapeHtml(t().preview)}</span></h3><ul class="modal-connectors">${connectorDetails}</ul></div></div>`;
   const close = () => { document.getElementById("modal-root").innerHTML = ""; };
   document.getElementById("close-modal")?.addEventListener("click", close);

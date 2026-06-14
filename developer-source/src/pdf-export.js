@@ -637,9 +637,10 @@ export function createInventoryPdf(items, options = {}) {
   paragraph(p.booksCopy, 8.5);
   const books = BOOKS[language] ?? BOOKS.en;
   books.forEach((book, index) => {
-    const cardHeight = 43;
     const coverWidth = 24;
-    const coverHeight = 30;
+    const coverAspect = Number(book.coverAspect) || 0.8;
+    const coverHeight = coverWidth / coverAspect;
+    const cardHeight = Math.max(43, coverHeight + 7);
     ensure(cardHeight + 7);
     const top = y;
     const coverX = M + 6;

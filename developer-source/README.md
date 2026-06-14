@@ -90,7 +90,8 @@ The aggregated totals do not require the complete detailed inventory to be downl
 
 The Environments view includes:
 
-- Environment display name and identifier.
+- Environment display name as the primary table label, with the environment GUID retained only as technical detail.
+- Canonical matching between full provider paths and bare environment GUIDs.
 - Environment type.
 - Region.
 - Managed Environment indicator.
@@ -116,7 +117,9 @@ The detailed inventory supports:
 - Sorting.
 - Browser-side table pagination.
 - Resource details.
-- Connector identifiers.
+- Stable display-name, environment, owner/creator, created-date, and modified-date fields from projected aliases.
+- An explicit **Load** action in the Connectors column for supported resources.
+- Connector identifiers and operation IDs retrieved through a one-resource detail query.
 - Trigger connector and trigger operation where available.
 - Quarantine indicator where available.
 - Owner, creator, creation date, and modification date where available.
@@ -286,6 +289,12 @@ This design supplies the Overview KPIs and expected counts without retrieving ev
 #### 2. Environments and environment groups
 
 A dedicated query retrieves only environment-related fields, including display name, region, type, Managed Environment status, environment-group context, description, and last-modified information where available.
+
+#### Stable aliases for real-tenant responses
+
+Azure Resource Graph can return projected nested properties as top-level columns. The application therefore projects stable aliases such as `displayName`, `environmentId`, `createdAt`, `lastModifiedAt`, `ownerId`, and `createdBy`, and its normalisation layer accepts both nested and projected response shapes.
+
+Environment identifiers are canonicalised so values such as `/providers/Microsoft.PowerPlatform/environments/<guid>` and `<guid>` resolve to the same environment. Tables and selectors display the environment name while retaining the GUID internally for API calls.
 
 #### 3. Recent activity
 
@@ -750,6 +759,13 @@ The export includes:
 
 The executive PDF is generated locally in the browser. No tenant data is sent to an external PDF service.
 
+Before generation, the application evaluates report readiness. When any bootstrap query, detailed resource dataset, or optional administrative source remains pending or partial, a modal lists the incomplete areas and requires an explicit decision:
+
+- **Continue and export** generates the report using the data currently available.
+- **Cancel export** returns to the application without creating a file.
+
+This validation prevents an incomplete report from being exported silently while preserving the administrator's ability to produce a deliberate point-in-time report.
+
 Depending on which datasets have been loaded, the report can include:
 
 - Branded cover page.
@@ -781,6 +797,15 @@ public/assets/book-covers/
 
 They are converted to image data and embedded in the PDF. The report does not depend on Amazon image hosting or cross-origin canvas access for the covers.
 
+The Copilot Studio covers supplied by the repository owner use unique filenames:
+
+```text
+copilot-studio-coe-es-original-a4.jpg
+copilot-studio-coe-en-original-a4.jpg
+```
+
+Their original 1414 × 2000 portrait ratio is preserved in both the SPA and PDF. Unique filenames also prevent a browser or GitHub Pages edge cache from reusing an earlier incorrect thumbnail.
+
 ### Completeness labelling
 
 The PDF distinguishes between:
@@ -791,7 +816,7 @@ The PDF distinguishes between:
 - Optional administrative sources not loaded.
 - Partial datasets.
 
-A report should not be interpreted as a complete tenant assessment when the relevant detailed resource types or administrative sources were not loaded.
+A report should not be interpreted as a complete tenant assessment when the relevant detailed resource types or administrative sources were not loaded. The pre-export readiness dialog makes that condition visible before the user confirms the export.
 
 ---
 
@@ -813,6 +838,8 @@ Cached dataset keys include:
 - Dataset name.
 - Resource type where applicable.
 - Cache-schema version.
+
+The current cache schema is **v3**. This revision invalidates earlier cached rows that could contain GUID-only labels or missing projected metadata after the real-tenant field-mapping update.
 
 Examples of cached datasets include:
 
@@ -1099,7 +1126,11 @@ The test suite covers:
 - Lightweight summary query construction.
 - Environment query construction.
 - Recent-resource query construction.
-- Per-resource-type query construction.
+- Per-resource-type and one-resource detail query construction.
+- Stable top-level aliases for nested inventory properties.
+- Canonical environment-ID matching and display-name resolution.
+- Connector-detail detection and operation normalisation.
+- PDF readiness confirmation behaviour and local cover-asset rules.
 - Pagination.
 - Retry and API error handling.
 - Repeated-token protection.
@@ -1221,7 +1252,7 @@ power-platform-tenant-inventory-explorer/
 Microsoft currently documents limitations that can affect interpretation, including:
 
 - Inventory changes can take approximately 15 minutes to appear.
-- Connector inventory is a preview capability and can be incomplete.
+- Connector inventory is a preview capability and can be incomplete. It is emitted only for the resource types documented by Microsoft; unsupported types show **Not available**.
 - Modified date and last-modified-by information can be unavailable for agents.
 - The owner shown for cloud flows and agent flows can represent the creator rather than a later owner change.
 - Only published model-driven apps are included.
@@ -1308,7 +1339,20 @@ Use that information to determine which dataset failed. Typical examples are:
 
 If only `overview-summary-by-environment` fails, the application continues with the main summary and the tenant can still be explored. For any other HTTP 400, copy the service message, correlation ID, query name, and request body before opening an issue.
 
-A specific `overview-environments` error mentioning `properties.displayName`, `Operator_FailedToResolveEntity`, or `InvalidExpressionKey` means the service attempted to sort by a nested property after projection. The corrected v1.0 build creates a simple `displayNameSort` alias, orders by that alias, and projects the environment fields afterwards. Recent-resource and per-resource-type queries use equivalent `modifiedDate` aliases before projection.
+### Names appear as GUIDs or metadata columns are blank
+
+After replacing an earlier deployment:
+
+1. Upload the new `index.html` and complete `assets/` folder together.
+2. Hard-refresh the browser.
+3. Select **Clear cache**.
+4. Reconnect and reload the affected dataset.
+
+The current build uses stable projected aliases and cache schema v3. A GUID remains visible only as a fallback when Microsoft does not emit a display name.
+
+### Loading connector details
+
+For supported rows, select **Load** in the Connectors column. The application runs a one-resource detail query and updates the row after the modal receives connector data. Unsupported resource types display **Not available**.
 
 ### Overview loads but a detailed type fails
 
@@ -1368,20 +1412,22 @@ Verify that:
 - Asset filenames were not renamed.
 - GitHub Pages points to `main` and `/(root)` for a manual deployment.
 
+### PDF reports pending data
+
+The readiness dialog is expected when any query is idle, loading, partial, cancelled, or failed. Review the listed sources and choose **Continue and export** only when a partial report is acceptable.
+
 ### PDF does not show book covers
 
 Verify that these files exist in the deployed site:
 
 ```text
 assets/book-covers/coe-power-platform-es.jpg
-assets/book-covers/copilot-studio-coe-es.jpg
+assets/book-covers/copilot-studio-coe-es-original-a4.jpg
 assets/book-covers/coe-power-platform-en.jpg
-assets/book-covers/copilot-studio-coe-en.jpg
+assets/book-covers/copilot-studio-coe-en-original-a4.jpg
 ```
 
 Upload the complete `assets` folder rather than only the JavaScript and CSS files.
-
-The Copilot Studio covers use a 4:5 thumbnail ratio in both the web interface and PDF. Images are displayed with `object-fit: contain`, so the complete supplied cover artwork remains visible rather than being cropped to a narrower frame.
 
 ### Old version remains visible after deployment
 

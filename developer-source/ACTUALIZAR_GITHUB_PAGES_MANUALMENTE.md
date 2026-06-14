@@ -4,8 +4,6 @@ Estas instrucciones no requieren Git ni Node.js.
 
 ## Qué incluye el paquete completo
 
-El ZIP completo contiene la aplicación compilada y toda la documentación del repositorio:
-
 ```text
 index.html
 .nojekyll
@@ -19,14 +17,15 @@ TROUBLESHOOTING.md
 CHANGELOG.md
 VALIDATION.md
 ACTUALIZAR_GITHUB_PAGES_MANUALMENTE.md
+SAMPLE_REPORT.pdf
 developer-source/
 ```
 
-La carpeta `developer-source/` contiene el proyecto Vite, tests, scripts y workflow. GitHub Pages no la ejecuta cuando el sitio está configurado para publicar desde `main` y `/(root)`.
+La carpeta `developer-source/` contiene el proyecto Vite, tests, scripts y workflow. GitHub Pages no la ejecuta cuando el sitio se publica desde `main` y `/(root)`.
 
 ## 1. Descargar y descomprimir
 
-Descarga el paquete completo y descomprímelo. No subas el ZIP directamente.
+Descarga el ZIP completo y descomprímelo. No subas el ZIP directamente.
 
 ## 2. Abrir el repositorio
 
@@ -36,7 +35,16 @@ Descarga el paquete completo y descomprímelo. No subas el ZIP directamente.
 
 ## 3. Subir todo el contenido
 
-Arrastra todos los archivos y carpetas que están dentro del ZIP descomprimido. `index.html` debe quedar directamente en la raíz.
+Arrastra todos los archivos y carpetas situados dentro del ZIP descomprimido. `index.html` debe quedar directamente en la raíz.
+
+Es imprescindible sustituir juntos:
+
+```text
+index.html
+assets/
+```
+
+La nueva versión utiliza nombres compilados distintos y portadas nuevas con nombres únicos. No basta con sustituir únicamente las imágenes.
 
 La estructura correcta es:
 
@@ -54,6 +62,7 @@ repository/
 ├── CHANGELOG.md
 ├── VALIDATION.md
 ├── ACTUALIZAR_GITHUB_PAGES_MANUALMENTE.md
+├── SAMPLE_REPORT.pdf
 └── developer-source/
 ```
 
@@ -62,7 +71,7 @@ repository/
 Utiliza este mensaje:
 
 ```text
-Fix environment query sorting and Copilot Studio book thumbnails
+Fix real-tenant field mapping, PDF validation, connectors and book covers
 ```
 
 Selecciona **Commit directly to the main branch** y pulsa **Commit changes**.
@@ -75,33 +84,36 @@ Conserva:
 Settings > Pages > Deploy from a branch > main > /(root)
 ```
 
-No cambies a GitHub Actions para este paquete manual.
-
 ## 6. Esperar la publicación
 
 Revisa **Actions** o **Settings > Pages** hasta que `pages build and deployment` aparezca en verde.
 
-## 7. Forzar la actualización
+## 7. Eliminar datos antiguos del navegador
 
-- Windows: `Ctrl + F5`
-- macOS: `Cmd + Shift + R`
+Después de publicar:
 
-También puedes abrir una ventana privada.
+1. Abre la aplicación con `Ctrl + F5` en Windows o `Cmd + Shift + R` en macOS.
+2. Pulsa **Clear cache** en la aplicación.
+3. Cierra sesión y vuelve a conectar el tenant.
+4. Recarga Overview, Environments y el tipo de recurso que quieras probar.
 
-## 8. Validar la corrección
+Este paso elimina filas guardadas con el esquema de caché anterior, que podían conservar GUIDs o campos vacíos.
 
-1. Confirma que la interfaz muestra **v1.0**.
-2. Conecta el tenant.
-3. Comprueba que el resumen por tipo y región carga.
-4. Confirma que `overview-environments` ya no devuelve el error de ordenación sobre `properties.displayName`; si aparece otro HTTP 400, abre **Detalles** y revisa el nombre de la consulta y el mensaje del servicio.
-5. Verifica que un fallo en `overview-summary-by-environment` no bloquee los KPIs principales.
-6. Carga manualmente un tipo de recurso.
-7. Exporta CSV, JSON y PDF.
-8. Comprueba que las portadas de Copilot Studio se muestran completas, sin recortes ni deformación, tanto en la web como en el PDF.
+## 8. Validar los cambios
+
+1. Confirma que la interfaz continúa mostrando **v1.0**.
+2. Comprueba que Environments muestra el nombre visible y no el GUID como texto principal.
+3. Abre Environment Settings y confirma que el selector muestra nombres de entorno.
+4. Carga un tipo de recurso y verifica Name, Environment, Created y Modified.
+5. En un recurso compatible, pulsa **Load** en la columna Connectors.
+6. Comprueba que el detalle muestra conectores y operaciones, o un mensaje claro cuando la API no devuelve datos.
+7. Pulsa **Export PDF** sin cargar todos los datasets y verifica que aparece el cuadro de confirmación.
+8. Prueba **Cancel export** y después **Continue and export**.
+9. Comprueba la portada original del libro de Copilot Studio tanto en la SPA como en la última página del PDF.
 
 ## Microsoft Entra
 
-No necesitas modificar la URL de redirección si mantienes el mismo repositorio.
+No necesitas modificar la URL de redirección ni crear un Client Secret.
 
 Permisos delegados:
 
@@ -110,5 +122,3 @@ ResourceQuery.Resources.Read
 EnvironmentManagement.Environments.Read
 EnvironmentManagement.Settings.Read
 ```
-
-No crees un Client Secret.

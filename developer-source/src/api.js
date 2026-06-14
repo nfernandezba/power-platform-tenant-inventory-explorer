@@ -37,26 +37,26 @@ const BASIC_RESOURCE_FIELDS = [
   "tenantId",
   "type",
   "location",
-  "properties.displayName",
-  "properties.environmentId",
-  "properties.ownerId",
-  "properties.createdAt",
-  "properties.createdBy",
-  "properties.lastModifiedAt",
-  "properties.lastModifiedBy",
-  "properties.isQuarantined",
-  "properties.subType",
-  "properties.trigger",
-  "properties.triggerOperation",
-  "properties.createdIn"
+  "displayName = tostring(properties.displayName)",
+  "environmentId = tostring(properties.environmentId)",
+  "ownerId = tostring(properties.ownerId)",
+  "createdAt = tostring(properties.createdAt)",
+  "createdBy = tostring(properties.createdBy)",
+  "lastModifiedAt = tostring(properties.lastModifiedAt)",
+  "lastModifiedBy = tostring(properties.lastModifiedBy)",
+  "isQuarantined = tobool(properties.isQuarantined)",
+  "subType = tostring(properties.subType)",
+  "trigger = tostring(properties.trigger)",
+  "triggerOperation = tostring(properties.triggerOperation)",
+  "createdIn = tostring(properties.createdIn)"
 ];
 
 const DETAIL_RESOURCE_FIELDS = [
   ...BASIC_RESOURCE_FIELDS,
-  "properties.powerPlatformConnectors",
-  "properties.appModuleId",
-  "properties.logicalName",
-  "properties.workflowEntityId"
+  "powerPlatformConnectors = properties.powerPlatformConnectors",
+  "appModuleId = tostring(properties.appModuleId)",
+  "logicalName = tostring(properties.logicalName)",
+  "workflowEntityId = tostring(properties.workflowEntityId)"
 ];
 
 const ENVIRONMENT_FIELDS = [
@@ -64,13 +64,13 @@ const ENVIRONMENT_FIELDS = [
   "tenantId",
   "type",
   "location",
-  "properties.displayName",
-  "properties.environmentType",
-  "properties.isManaged",
-  "properties.environmentGroup",
-  "properties.environmentGroupId",
-  "properties.lastModifiedAt",
-  "properties.description"
+  "displayName = tostring(properties.displayName)",
+  "environmentType = tostring(properties.environmentType)",
+  "isManagedEnvironment = tobool(properties.isManaged)",
+  "environmentGroup = tostring(properties.environmentGroup)",
+  "environmentGroupId = tostring(properties.environmentGroupId)",
+  "lastModifiedAt = tostring(properties.lastModifiedAt)",
+  "description = tostring(properties.description)"
 ];
 
 function options(skipToken = "", top = INVENTORY_QUERY.pageSize) {
@@ -168,7 +168,7 @@ export function createResourceTypeQuery(resourceTypeOrKey, skipToken = "", { env
       $type: "where",
       FieldName: "properties.environmentId",
       Operator: "==",
-      Values: [String(environmentId)]
+      Values: [quote(environmentId)]
     });
   }
   clauses.push(

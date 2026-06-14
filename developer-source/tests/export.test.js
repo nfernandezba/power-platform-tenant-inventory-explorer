@@ -22,20 +22,28 @@ describe("PDF export", () => {
   });
 
 
-  it("preserves the full 4:5 book-cover aspect ratio in web and PDF thumbnails", () => {
+  it("preserves each original book-cover aspect ratio in web and PDF thumbnails", () => {
     const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
     const pdfSource = readFileSync(new URL("../src/pdf-export.js", import.meta.url), "utf8");
-    expect(css).toContain(".book-cover-wrap { width: 96px; height: 120px;");
+    expect(css).toContain("aspect-ratio: var(--book-ratio, .8)");
     expect(css).toContain("object-fit: contain");
-    expect(pdfSource).toContain("const coverWidth = 24;");
-    expect(pdfSource).toContain("const coverHeight = 30;");
+    expect(pdfSource).toContain("const coverAspect = Number(book.coverAspect) || 0.8;");
+    expect(pdfSource).toContain("const coverHeight = coverWidth / coverAspect;");
+    expect(BOOKS.es[1].coverAspect).toBeCloseTo(1414 / 2000, 6);
+    expect(BOOKS.en[1].coverAspect).toBeCloseTo(1414 / 2000, 6);
+  });
+
+
+  it("uses unique original-A4 filenames for the Copilot Studio covers", () => {
+    expect(BOOKS.es[1].cover).toContain("copilot-studio-coe-es-original-a4.jpg");
+    expect(BOOKS.en[1].cover).toContain("copilot-studio-coe-en-original-a4.jpg");
   });
 
   it("embeds book-cover images in the PDF when provided", () => {
     const items = normaliseInventory(demoRawItems);
     const coverPaths = [
       new URL("../public/assets/book-covers/coe-power-platform-es.jpg", import.meta.url),
-      new URL("../public/assets/book-covers/copilot-studio-coe-es.jpg", import.meta.url)
+      new URL("../public/assets/book-covers/copilot-studio-coe-es-original-a4.jpg", import.meta.url)
     ];
     const bookCoverData = coverPaths.map(path => `data:image/jpeg;base64,${readFileSync(path).toString("base64")}`);
     const plain = createInventoryPdf(items, { language: "es", strings: translations.es });

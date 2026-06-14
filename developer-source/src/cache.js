@@ -1,7 +1,7 @@
 const DB_NAME = "pp-tenant-inventory-explorer";
 const DB_VERSION = 1;
 const STORE = "datasets";
-const CACHE_SCHEMA_VERSION = 2;
+const CACHE_SCHEMA_VERSION = 3;
 
 export function datasetCacheKey(tenantId, datasetKey) {
   return `${String(tenantId || "unknown").toLowerCase()}:${datasetKey}:v${CACHE_SCHEMA_VERSION}`;

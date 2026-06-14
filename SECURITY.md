@@ -62,3 +62,13 @@ Tenant Governance is a Microsoft preview endpoint. DLP retrieval uses an adminis
 ## Reporting a vulnerability
 
 Do not include tenant data, tokens, secrets, or personal information in a public issue. Contact the repository owner privately through the channel listed on the repository profile.
+## Export readiness and local image assets
+
+Before generating a PDF, the application checks whether required, detailed, or optional datasets remain pending or partial and requires explicit user confirmation. This prevents an incomplete report from being exported silently. The generated report is still created locally in the browser.
+
+Book covers are served as same-origin static assets and converted to image data before PDF generation. No tenant data is sent to the book retailer or to an external document-generation service.
+
+## Cache schema compatibility
+
+The current build uses IndexedDB cache schema v3. The schema change invalidates earlier cached resource rows that could contain GUID-only labels or missing projected metadata. Users should still select **Clear cache** after replacing an older deployment on a shared device.
+
