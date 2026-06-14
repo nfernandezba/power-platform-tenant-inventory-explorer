@@ -1,7 +1,5 @@
 # Power Platform Tenant Inventory Explorer
 
-> **Complete manual GitHub Pages package:** the production site is located at the repository root so it can be published with `main` + `/(root)`. The complete Vite source, tests, workflow, and build scripts are included under [`developer-source/`](./developer-source/).
-
 ![Version](https://img.shields.io/badge/version-v1.0-5552B4)
 ![Deployment](https://img.shields.io/badge/deployment-GitHub%20Pages-3895FF)
 ![Authentication](https://img.shields.io/badge/authentication-Microsoft%20Entra%20ID-27B8C6)

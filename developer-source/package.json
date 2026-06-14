@@ -1,0 +1,25 @@
+{
+  "name": "power-platform-tenant-inventory-explorer",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Modular GitHub Pages SPA for Power Platform inventory with lightweight summaries, manual paged resource queries, governance, DLP policies, and environment settings.",
+  "scripts": {
+    "dev": "vite",
+    "check:version": "node scripts/check-version.mjs",
+    "build": "npm run check:version && vite build",
+    "preview": "vite preview",
+    "test": "npm run check:version && vitest run"
+  },
+  "dependencies": {
+    "@azure/msal-browser": "5.13.0",
+    "jspdf": "^4.2.1"
+  },
+  "devDependencies": {
+    "vite": "8.0.16",
+    "vitest": "4.1.8"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}
