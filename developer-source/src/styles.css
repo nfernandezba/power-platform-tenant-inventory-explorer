@@ -186,6 +186,9 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; overflow-
 .inventory-section { margin-top: 2.2rem; }
 .section-heading-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: .9rem; }
 .section-heading-row h2 { font-size: 1.5rem; }
+.overview-heading { align-items: flex-start; margin-bottom: 1.35rem; }
+.overview-heading .section-intro { margin-bottom: 0; }
+.overview-heading .export-toolbar { flex: 0 0 auto; margin-top: .1rem; }
 .export-actions { display: flex; gap: .45rem; }
 .filter-panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius); padding: .9rem; margin-bottom: .8rem; }
 .filter-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: .7rem; }
@@ -484,7 +487,7 @@ body { overflow-x: hidden; }
   .lang-switch { margin-left: auto; }
   .lang-btn { min-width: 44px; min-height: 44px; justify-content: center; padding: .55rem; }
   .lang-btn span { display: inline; font-size: .75rem; }
-  .lang-btn .flag-svg { display: none; }
+  .lang-btn .flag-svg { display: block; }
 
   #main { padding: 1.15rem .8rem 3rem; }
   .workspace-tabs, .resource-tabs { display: none; }
@@ -652,4 +655,18 @@ body { overflow-x: hidden; }
   .resource-card-header .status-pill { align-self: flex-start; }
   .resource-card-actions { flex-direction: row; }
   .resource-card-actions > * { width: auto; flex: 1 1 130px; }
+}
+
+@media (max-width: 520px) {
+  .lang-btn span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }

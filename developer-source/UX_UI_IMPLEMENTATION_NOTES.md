@@ -13,7 +13,8 @@ This update implements the UX/UI recommendations identified during the review of
 - Corrected the English owner-filter meaning so it matches the Spanish functionality: name, UPN, or ID.
 - Standardised Spanish wording and voseo across instructions and helper text.
 - Replaced avoidable generic anglicisms while retaining official Microsoft product and technical names where appropriate.
-- Added visible and accessible language names instead of relying on country flags alone.
+- Restored the Spanish and English flag icons while retaining visible abbreviations and accessible language names; on very narrow screens the flags remain visible and the abbreviations are available to assistive technology.
+- Moved the overview download controls to the top of the content, beside the page introduction and before KPIs, so users do not need to scroll to the bottom to export.
 
 ### Responsive and mobile-first experience
 
@@ -43,7 +44,7 @@ This update implements the UX/UI recommendations identified during the review of
 
 ## Validation performed
 
-- Automated tests: **49 passed across 7 test files**.
+- Automated tests: **51 passed across 8 test files**.
 - Production build: completed successfully with Vite.
 - Responsive rendering reviewed at **320, 390, 768, 1,024, and 1,440 px**.
 - Checked representative start, overview, and resource-inventory views for page-level horizontal overflow, navigation visibility, text wrapping, and touch-target sizing.

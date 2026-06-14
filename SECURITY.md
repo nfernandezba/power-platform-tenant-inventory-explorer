@@ -77,3 +77,8 @@ Book covers are served as same-origin static assets and converted to image data 
 
 The current build uses IndexedDB cache schema v3. The schema change invalidates earlier cached resource rows that could contain GUID-only labels or missing projected metadata. Users should still select **Clear cache** after replacing an older deployment on a shared device.
 
+
+
+## Environment Management Settings eligibility
+
+The SPA does not attempt to create or initialise Environment Management Settings. It queries this source only for environments explicitly marked as Managed. Not Managed environments are treated as not applicable, and a missing settings record on a Managed Environment is treated as not explicitly configured. This preserves the read-only security model and avoids requesting write permissions merely to initialise a settings object.

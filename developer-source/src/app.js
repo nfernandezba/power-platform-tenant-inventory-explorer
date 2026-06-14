@@ -215,8 +215,8 @@ function renderHeader() {
     <span class="badge">v${APP_VERSION}</span>
     <a class="linkedin-profile" href="${LINKEDIN_URL}" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn · Nico Fernandez">${linkedInIcon()}<span>Nico Fernandez</span></a>
     <div class="lang-switch" role="group" aria-label="Idioma / Language">
-      <button class="lang-btn ${state.language === "es" ? "active" : ""}" data-lang="es" type="button" aria-label="${escapeHtml(t().spanishLanguage)}" title="${escapeHtml(t().spanishLanguage)}"><span>ES</span></button>
-      <button class="lang-btn ${state.language === "en" ? "active" : ""}" data-lang="en" type="button" aria-label="${escapeHtml(t().englishLanguage)}" title="${escapeHtml(t().englishLanguage)}"><span>EN</span></button>
+      <button class="lang-btn ${state.language === "es" ? "active" : ""}" data-lang="es" type="button" aria-label="${escapeHtml(t().spanishLanguage)}" title="${escapeHtml(t().spanishLanguage)}">${flagEs()}<span>ES</span></button>
+      <button class="lang-btn ${state.language === "en" ? "active" : ""}" data-lang="en" type="button" aria-label="${escapeHtml(t().englishLanguage)}" title="${escapeHtml(t().englishLanguage)}">${flagEn()}<span>EN</span></button>
     </div>
   </header>`;
 }
@@ -338,7 +338,7 @@ function renderActiveTab() {
 }
 
 function renderOverviewTab() {
-  return `<section class="section-block"><div class="section-intro"><p class="eyebrow">TENANT INVENTORY</p><h1>${escapeHtml(t().overviewTitle)}</h1><p>${escapeHtml(t().overviewOptimisedBody)}</p></div>${renderKpis()}${renderInsights()}${renderResponsiveDisclosure(t().quickOverviewQueries, renderBootstrapStatus())}${renderResponsiveDisclosure(t().queryCentre, renderQueryCentre(true))}${renderResponsiveDisclosure(t().dataSources, renderDataSources())}${renderResponsiveDisclosure(t().recentResources, renderRecentResources())}${renderExportToolbar()}</section>`;
+  return `<section class="section-block"><div class="section-heading-row overview-heading"><div class="section-intro"><p class="eyebrow">TENANT INVENTORY</p><h1>${escapeHtml(t().overviewTitle)}</h1><p>${escapeHtml(t().overviewOptimisedBody)}</p></div>${renderExportToolbar()}</div>${renderKpis()}${renderInsights()}${renderResponsiveDisclosure(t().quickOverviewQueries, renderBootstrapStatus())}${renderResponsiveDisclosure(t().queryCentre, renderQueryCentre(true))}${renderResponsiveDisclosure(t().dataSources, renderDataSources())}${renderResponsiveDisclosure(t().recentResources, renderRecentResources())}</section>`;
 }
 function renderKpis() {
   const summary = summaryData();

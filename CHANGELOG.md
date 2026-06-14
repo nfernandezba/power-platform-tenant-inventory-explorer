@@ -6,7 +6,8 @@ All public releases remain identified as **v1.0** unless the repository owner ex
 
 - Completed the Spanish and English navigation translations and aligned terminology across generic interface labels, filters, helper text, and status messages.
 - Standardised the Spanish writing style and corrected inconsistent or ambiguous translations without changing official Microsoft product names.
-- Added explicit, accessible language labels and improved mobile language switching.
+- Added explicit, accessible language labels, restored the Spanish and English flag icons, and improved mobile language switching.
+- Moved the overview PDF, CSV, and JSON download controls to the top of the page, before KPI and analytical content.
 - Replaced horizontally hidden primary and resource navigation tabs with discoverable mobile selectors while preserving the desktop tab experience.
 - Added a compact mobile progress indicator and stacked primary actions on narrow screens.
 - Introduced a dedicated mobile resource-card view with mobile sorting, while retaining the full comparison table on larger screens.
