@@ -11,6 +11,8 @@ The solution is designed as a static Single-Page Application (SPA) that can be h
 
 > **Public version policy:** the public version is fixed at **v1.0**. It must not be changed in the interface, code, documentation, packages, or reports unless the repository owner explicitly requests a version change.
 
+For a complete bilingual configuration walkthrough, see [Microsoft Entra App Registration and Tenant Setup Guide](APP_REGISTRATION_AND_TENANT_SETUP.md).
+
 ---
 
 ## Table of contents
@@ -1430,4 +1432,4 @@ The corresponding Spanish editions are also presented when the interface languag
 
 This project is licensed under the MIT Licence.
 
-See [LICENSE](./LICENSE).
+See the canonical [LICENSE](./LICENSE) and the bilingual [LICENSE.md](./LICENSE.md).
